@@ -60,7 +60,7 @@ public class ClearImage {
     	List<String> errorList=new ArrayList<String>();
     	List<String> dataList=CSVUtils.importCsv(new File("123.csv"));
     	getCookie();
-		//È¥ÖØ
+		//å»é‡
 		List<String> newList = new ArrayList(new TreeSet(dataList)); 
 		for (String address : newList) {
 			System.out.println(address);
@@ -128,7 +128,7 @@ public class ClearImage {
 			}
 		}
 		
-		//·¢ËÍÓÊ¼ş
+		//å‘é€é‚®ä»¶
 		SendMail(unrecognizedList, errorList);
 		
 		
@@ -138,21 +138,21 @@ public class ClearImage {
     public static void SendMail(List<String> unrecognizedList,List<String> errorList){
         MailBean mb = new MailBean();
         mb.setHost("smtp.exmail.qq.com"); 
-        mb.setUsername("monitoring@webpowerchina.com"); 
-        mb.setPassword("Time0609");
-        mb.setFrom("monitoring@webpowerchina.com");
+        mb.setUsername("email@webpowerchina.com"); 
+        mb.setPassword("password");
+        mb.setFrom("email@webpowerchina.com");
         mb.setTo("260806542@qq.com"); 
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
         mb.setSubject("ICP filing inquiry "+df.format(new Date()));
-        String content="ÒÔÏÂÓòÃûÎ´±¸°¸£º\n";
+        String content="ä»¥ä¸‹åŸŸåæœªå¤‡æ¡ˆï¼š\n";
         for (String string : errorList) {
         	//System.out.println(errorList);
         	content+=string+"\n";
 		}
         
         content+="\n\n";
-        content+="ÒÔÏÂÓòÃû²éÑ¯³¬Ê±£¬ÇëÊÖ¶¯²éÑ¯\n";
+        content+="ä»¥ä¸‹åŸŸåæŸ¥è¯¢è¶…æ—¶ï¼Œè¯·æ‰‹åŠ¨æŸ¥è¯¢\n";
         for (String string : unrecognizedList) {
         	content+=string+"\n";
 		}
@@ -162,11 +162,11 @@ public class ClearImage {
         SendMail sm = new SendMail();
         if(sm.sendMail(mb))
         {
-            //System.out.println("·¢ËÍ³É¹¦!");
+            //System.out.println("å‘é€æˆåŠŸ!");
         }
         else{
 
-            // System.out.println("·¢ËÍÊ§°Ü!");
+            // System.out.println("å‘é€å¤±è´¥!");
         }
     }
     
