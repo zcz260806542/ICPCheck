@@ -3,6 +3,7 @@ package utils;
 
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -21,6 +22,8 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimeUtility;
 
+import com.sun.jndi.url.iiopname.iiopnameURLContextFactory;
+
 public class SendMail {
 
     public String toChinese(String text) {
@@ -38,7 +41,7 @@ public class SendMail {
         final String username = mb.getUsername();
         final String password = mb.getPassword();
         String from = mb.getFrom();
-        String to = mb.getTo();
+        List<String> to = mb.getTo();
         String subject = mb.getSubject();
         String content = mb.getContent();
         String fileName = mb.getFilename();
@@ -58,7 +61,10 @@ public class SendMail {
         try {
             MimeMessage msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
-            InternetAddress[] address = {new InternetAddress(to)};
+            InternetAddress[] address = new InternetAddress[to.size()];
+            for(int i=0;i<to.size();i++){
+            	address[i]=new InternetAddress(to.get(i));
+            }
             msg.setRecipients(Message.RecipientType.TO, address);
             msg.setSubject(toChinese(subject));
 

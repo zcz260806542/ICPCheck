@@ -1,10 +1,11 @@
 package utils;
 
+import java.util.List;
 import java.util.Vector;
 
 public class MailBean {
 
-    private String to;                                // 收件人
+    private List<String> to;                                // 收件人
     private String from;                            // 发件人
     private String host;                            // SMTP主机
     private String username;                        // 发件人的用户名
@@ -14,15 +15,17 @@ public class MailBean {
     Vector<String> file;                            // 多个附件
     private String filename;                        // 附件的文件名
     
-    public String getTo() {
-        return to;
-    }
+   
 
-    public void setTo(String to) {
-        this.to = to;
-    }
+	public List<String> getTo() {
+		return to;
+	}
 
-    public String getFrom() {
+	public void setTo(List<String> to) {
+		this.to = to;
+	}
+
+	public String getFrom() {
         return from;
     }
 

@@ -5,25 +5,37 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
 
+import com.opencsv.CSVWriter;
+import com.sun.org.apache.bcel.internal.generic.NEW;
+
+import entity.ICP;
 import utils.CSVUtils;
 import utils.MailBean;
 import utils.OCRUtil;
@@ -36,8 +48,22 @@ public class ClearImage {
 	static String tempbufferedImageImageName = "temp2.jpg";
 	static Float flagPx=2f;
     static String cookie= "__jsluid=8327d5cef5a9ca391a69beb8bc774aea; Hm_lvt_d7682ab43891c68a00de46e9ce5b76aa=1504581942,1504762898; Hm_lpvt_d7682ab43891c68a00de46e9ce5b76aa=1504763043; ";
+    static List<String[]> icps=new ArrayList<String[]>();
     
-    
+    static String csv_name="";
+    static List<String> to_mail=new ArrayList<String>();
+	static String host="";
+	static String username="";
+	static String password="";
+	static String from_mail="";
+	static String tomail="";
+	
+
+	static String importpath="";
+	
+	
+	
+
     
     private static void getCookie() {
     	URLConnection connection;
@@ -52,20 +78,65 @@ public class ClearImage {
 		} catch (IOException e2) {
 			//e2.printStackTrace();
 		}
-		
 	}
     
     public static void main(String[] args) {
+    	try {
+			Properties pro = new Properties();
+			FileInputStream in = new FileInputStream("config.properties");
+			pro.load(in);
+			Iterator<String> it=pro.stringPropertyNames().iterator();
+             while(it.hasNext()){
+                String key=it.next();
+             //    System.out.println(key+":"+pro.getProperty(key));
+                 switch (key) {
+				case "csv_name":
+					csv_name=pro.getProperty(key);
+					break;
+				case "from_mail":
+					from_mail=pro.getProperty(key);
+					break;
+				case "host":
+					host=pro.getProperty(key);
+					break;
+				case "username":
+					username=pro.getProperty(key);
+					break;
+				case "password":
+					password=pro.getProperty(key);
+					break;
+				case "importpath":
+					importpath=pro.getProperty(key);
+					break;
+				case "tomail":
+					tomail=pro.getProperty(key);
+					break;
+				default:
+					if(key.indexOf("to_mail")>=0){
+						to_mail.add(pro.getProperty(key));
+					}
+					break;
+				}
+             }
+             
+			in.close();
+		} catch (FileNotFoundException e2) {
+			e2.printStackTrace();
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
+    	
+    	
     	List<String> unrecognizedList=new ArrayList<String>();
     	List<String> errorList=new ArrayList<String>();
-    	List<String> dataList=CSVUtils.importCsv(new File("123.csv"));
+    	List<String> dataList=CSVUtils.importCsv(new File(csv_name));
     	getCookie();
 		//去重
 		List<String> newList = new ArrayList(new TreeSet(dataList)); 
+		
 		for (String address : newList) {
 			System.out.println(address);
-			//System.out.println(address);
-			for (int i = 0; i < 21; i++) {
+			for (int i = 0; i < 26; i++) {
 				try {
 					downloadPicture("http://www.miitbeian.gov.cn/getVerifyCode?"+i,i);
 					String filepath = "temp.jpg";
@@ -78,70 +149,94 @@ public class ClearImage {
 					BufferedImage tempbufferedImage = ImageIO.read(file1);
 					tempbufferedImage=clearNoise(tempbufferedImage,50,4,4); 
 					ImageIO.write(tempbufferedImage, "jpg", new File(".", "test.jpg"));
-				
-				
-				
 					String valCode = new OCRUtil().recognizeText(new File(DPath + "test.jpg"), "jpg");
 					valCode= valCode.replaceAll("[^\\w]|_","");
 					//System.out.println(valCode);
 					if(valCode.length()!=6)
 					{
+						if(i==24){
+							unrecognizedList.add(address);
+							break;
+						}
 						Thread.sleep(3000);
 						continue;
 					}
 					Thread.sleep(1500);
 					String resString = yanzheng("http://www.miitbeian.gov.cn/common/validate/validCode.action?validateValue="+valCode);
+					//System.out.println(resString);
 					if(resString.equals("{\"result\":true}")){
 						String result=sendPost("http://www.miitbeian.gov.cn/icp/publish/query/icpMemoInfo_searchExecute.action", MessageFormat.format("siteName=&siteDomain={0}&condition=2&siteUrl=&mainLicense=&siteIp=&unitName=&mainUnitNature=-1&certType=-1&mainUnitCertNo=&verifyCode={1}", address,valCode));
 						//String r=getICP("http://www.miitbeian.gov.cn/icp/publish/query/icpMemoInfo_searchExecute.action?siteDomain=webpower-in1c.com&verifyCode="+valCode);
 						//System.out.println(result);
-						if(result.indexOf("id=\"1\"")<0){
+						int index= result.indexOf("id=\"1\"");
+						if(index<0){
 							errorList.add(address);
+							String[] strs = {address ,"0" , ""};  
+							icps.add(strs);
 						}else{
+							String tempString=result.substring(index, index+400);
+							tempString=tempString.substring(tempString.indexOf("ICP")-1);
+							tempString=tempString.substring(0,tempString.indexOf("</td>"));
+							System.out.println(tempString);
+							String[] strs = {address , "1" ,tempString};  
+							icps.add(strs);
 						}
+						new File("./temp1.jpg").delete();    
+						new File("./temp2.jpg").delete();    
+						new File("./temp.jpg").delete();    
 						break;
 					}else if(resString.equals("{}")){
+						System.out.println("aaaa");
 						getCookie();
 					}
-					
 					Thread.sleep(1500);
 				} catch (IOException e) {
-					//e.printStackTrace();
+					e.printStackTrace();
 					try {
 						Thread.sleep(10000);
 					} catch (InterruptedException e1) {
 						//e1.printStackTrace();
 					}
 				} catch (Exception e) {
-					//e.printStackTrace();
+					e.printStackTrace();
 					try {
 						Thread.sleep(10000);
 					} catch (InterruptedException e1) {
 						//e1.printStackTrace();
 					}
 				} 
-				
-				if(i==20){
+				if(i==24){
 					unrecognizedList.add(address);
 					break;
 				}
 			}
 		}
 		
-		//发送邮件
-		SendMail(unrecognizedList, errorList);
+		if(tomail.equals("1")){
+			SendMail(unrecognizedList, errorList);
+		}
 		
-		
+		try {
+			
+			OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importpath), Charset.forName("GBK"));  
+	        CSVWriter csvWriter = new CSVWriter(out, ',');  
+			for (String[] strs : icps) {
+				csvWriter.writeNext(strs);  
+			}
+			csvWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}  
 	}
     
     
     public static void SendMail(List<String> unrecognizedList,List<String> errorList){
         MailBean mb = new MailBean();
-        mb.setHost("smtp.exmail.qq.com"); 
-        mb.setUsername("email@webpowerchina.com"); 
-        mb.setPassword("password");
-        mb.setFrom("email@webpowerchina.com");
-        mb.setTo("260806542@qq.com"); 
+        mb.setHost(host); 
+        mb.setUsername(username); 
+        mb.setPassword(password);
+        mb.setFrom(from_mail);
+        mb.setTo(to_mail); 
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
         mb.setSubject("ICP filing inquiry "+df.format(new Date()));
@@ -211,6 +306,48 @@ public class ClearImage {
         }
         return result;
     }   
+    
+    
+    public static String sendGet(String url, String param) {
+        String result = "";
+        BufferedReader in = null;
+        try {
+            String urlNameString = null;
+            if(param==null){
+            	urlNameString=url;
+            }else{
+            	urlNameString=url + "?" + param;
+            }
+            URL realUrl = new URL(urlNameString);
+            URLConnection connection = realUrl.openConnection();
+            connection.setRequestProperty("accept", "*/*");
+            connection.setRequestProperty("connection", "Keep-Alive");
+            connection.setRequestProperty("user-agent",
+                    "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            connection.connect();
+            Map<String, List<String>> map = connection.getHeaderFields();
+            for (String key : map.keySet()) {
+            }
+            in = new BufferedReader(new InputStreamReader(
+                    connection.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                result += line;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+        return result;
+    }
 	
     
     private static String getICP(String urlStr) throws IOException {  

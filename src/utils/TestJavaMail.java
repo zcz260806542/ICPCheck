@@ -12,7 +12,7 @@ public class TestJavaMail {
         mb.setUsername("monitoring@webpowerchina.com");                // 设置发件人邮箱的用户名
         mb.setPassword("Time0609");                        // 设置发件人邮箱的密码，需将*号改成正确的密码
         mb.setFrom("monitoring@webpowerchina.com");            // 设置发件人的邮箱
-        mb.setTo("260806542@qq.com");                // 设置收件人的邮箱
+       // mb.setTo("260806542@qq.com");                // 设置收件人的邮箱
         
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
         

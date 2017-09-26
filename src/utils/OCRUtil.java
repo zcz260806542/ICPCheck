@@ -64,8 +64,8 @@ public class OCRUtil {
      * @throws Exception
      */
     public String recognizeText(File imageFile,String imageFormat)throws Exception{    
-        File tempImage = new ImageIOHelper().createImage(imageFile,imageFormat);    
-        return ocrImages(tempImage, imageFile);   
+       // File tempImage = new ImageIOHelper().createImage(imageFile,imageFormat);    
+        return ocrImages(imageFile, imageFile);   
     }    
     
     /**
@@ -92,7 +92,7 @@ public class OCRUtil {
     private String ocrImages(File tempImage,File imageFile) throws IOException, InterruptedException{
         File outputFile = new File(imageFile.getParentFile(),"output");
         //Runtime.getRuntime().exec("attrib "+"\""+outputFile.getAbsolutePath()+"\""+" +H");
-        StringBuffer strB = new StringBuffer();    
+        StringBuffer strB = new StringBuffer();
         List<String> cmd = new ArrayList<String>();    
         if(OS.isWindowsXP()){    
             cmd.add(tessPath+"//tesseract");    
@@ -119,7 +119,7 @@ public class OCRUtil {
             while((str = in.readLine())!=null){    
                 strB.append(str).append(EOL);    
             }    
-            in.close();    
+            in.close(); 
         }else{    
             String msg;    
             switch(w){    
